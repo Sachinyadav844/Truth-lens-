@@ -1,6 +1,9 @@
-import { Router } from 'express'
+import { Router } from 'express';
+import { signup, login } from '../controllers/auth.controller.js';
 
-const router = Router()
-router.post('/login', (_request, response) => response.status(501).json({ error: 'Authentication is not configured yet.' }))
-router.post('/signup', (_request, response) => response.status(501).json({ error: 'Authentication is not configured yet.' }))
-export default router
+const router = Router();
+
+router.post('/signup', signup);
+router.post('/login', login);
+
+export default router;
