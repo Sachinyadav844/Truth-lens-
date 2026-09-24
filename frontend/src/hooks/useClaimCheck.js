@@ -9,8 +9,10 @@ export function useClaimCheck() {
     try {
       const result = await checkClaim(claim)
       setState({ loading: false, error: null, result })
+      return result
     } catch (error) {
       setState({ loading: false, error: error.message, result: null })
+      return null
     }
   }
 
