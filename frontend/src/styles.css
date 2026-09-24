@@ -1,0 +1,20 @@
+:root {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #17221f;
+  background: #f3efe4;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 320px; }
+
+.app-shell { width: min(720px, calc(100% - 40px)); margin: 0 auto; padding: 12vh 0; }
+.eyebrow { color: #b34b2d; font: 700 0.78rem/1.2 Georgia, serif; letter-spacing: 0.18em; }
+h1 { max-width: 620px; margin: 1rem 0; font-size: clamp(2.7rem, 8vw, 5.5rem); line-height: 0.95; font-weight: 500; }
+.intro { max-width: 500px; color: #53605b; font-size: 1.15rem; line-height: 1.5; }
+.claim-form { display: grid; gap: 0.75rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #c8c1b3; }
+label { font-weight: 700; }
+textarea { width: 100%; resize: vertical; padding: 1rem; border: 1px solid #a9aaa1; border-radius: 4px; background: #fffdf7; color: inherit; font: inherit; }
+button { justify-self: start; padding: 0.85rem 1.2rem; border: 0; border-radius: 3px; background: #b34b2d; color: #fffdf7; cursor: pointer; font: 700 1rem Georgia, serif; }
+button:hover { background: #913b25; }
