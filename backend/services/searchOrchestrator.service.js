@@ -179,3 +179,8 @@ export async function searchAll(query) {
     failures,
   };
 }
+
+export async function orchestrateSearch(query) {
+  const { results, failures } = await searchAll(query);
+  return { sources: results, failures };
+}

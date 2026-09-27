@@ -1,3 +1,5 @@
+import { filterByQuery } from "./queryFilter.service.js";
+
 const PIB_URL = "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3";
 
 // --------------------------------------------------
@@ -54,20 +56,7 @@ async function fetchPIB(query = "") {
   // Query → filter relevant PIB articles
   // -----------------------------------------------
 
-  const keywords = query
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word) => word.trim())
-    .filter((word) => word.length > 2);
-
-  const filteredArticles = articles.filter((article) => {
-    const text = `
-      ${article.title || ""}
-      ${article.description || ""}
-    `.toLowerCase();
-
-    return keywords.some((keyword) => text.includes(keyword));
-  });
+  const filteredArticles = filterByQuery(articles, query);
 
   console.log(
     `PIB articles: ${articles.length} → ${filteredArticles.length} relevant`,
@@ -80,7 +69,7 @@ async function fetchPIB(query = "") {
 // data.gov.in backup
 // --------------------------------------------------
 
-async function fetchDataGov() {
+async function fetchDataGov(query = "") {
   const url = process.env.DATA_GOV_API_URL;
   const apiKey = process.env.DATA_GOV_API_KEY;
 
@@ -98,11 +87,20 @@ async function fetchDataGov() {
     throw new Error(`data.gov.in request failed: ${response.status}`);
   }
 
-  const data = await response.json();
+  const payload = await response.json();
+  const records = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.records)
+      ? payload.records
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.results)
+          ? payload.results
+          : [];
 
   return {
     source: "data.gov.in",
-    data,
+    data: filterByQuery(records, query),
   };
 }
 
@@ -126,7 +124,7 @@ export async function getGovernmentNews(query = "") {
     console.log("Trying data.gov.in backup...");
 
     try {
-      return await fetchDataGov();
+      return await fetchDataGov(query);
     } catch (govError) {
       throw new Error(
         `Both government sources failed. ` +

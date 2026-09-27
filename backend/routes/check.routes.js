@@ -1,10 +1,9 @@
 import { Router } from 'express'
-import { createCheck, getCheckById, getHistory } from '../controllers/check.controller.js'
+import { createCheck, getCheckById, getCheckHistory } from '../controllers/check.controller.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
 const router = Router()
-router.use(requireAuth)
-router.post('/', createCheck)
-router.get('/history', getHistory)
-router.get('/:id', getCheckById)
+router.get('/history', requireAuth, getCheckHistory)
+router.get('/:id', requireAuth, getCheckById)
+router.post('/', requireAuth, createCheck)
 export default router

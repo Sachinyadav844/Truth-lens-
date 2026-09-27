@@ -1,23 +1,29 @@
-import { sessions, users } from '../utils/store.js'
+import jwt from 'jsonwebtoken';
 
 export function requireAuth(request, response, next) {
-  const authHeader = request.headers.authorization || ''
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+	const authorization = request.headers.authorization;
+	const match = authorization?.match(/^Bearer\s+(\S+)$/i);
 
-  if (!token) {
-    return response.status(401).json({ error: 'Authentication required.' })
-  }
+	if (!match) {
+		return response.status(401).json({ error: true, message: 'Authentication required' });
+	}
 
-  const email = sessions.get(token)
-  if (!email) {
-    return response.status(401).json({ error: 'Authentication required.' })
-  }
+	const secret = process.env.JWT_SECRET;
+	if (!secret) {
+		return next(new Error('JWT_SECRET is not configured'));
+	}
 
-  const user = users.get(email)
-  if (!user) {
-    return response.status(401).json({ error: 'Authentication required.' })
-  }
+	let claims;
+	try {
+		claims = jwt.verify(match[1], secret);
+	} catch {
+		return response.status(401).json({ error: true, message: 'Invalid or expired authentication token' });
+	}
 
-  request.user = user
-  return next()
+	if (typeof claims === 'string' || !claims.id) {
+		return response.status(401).json({ error: true, message: 'Invalid authentication token' });
+	}
+
+	request.user = claims;
+	return next();
 }
