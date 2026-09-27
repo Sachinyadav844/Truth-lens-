@@ -1,6 +1,8 @@
 # TruthLens
 > **Evidence-First AI Fact-Checking and Claim Investigation Platform**
 
+🌍 Live Demo: https://truth-lens-orcin.vercel.app/
+ 
 ---
 
 ## 🏆 Hackathon Details
