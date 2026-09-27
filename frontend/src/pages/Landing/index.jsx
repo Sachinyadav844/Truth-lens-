@@ -66,14 +66,14 @@ export default function LandingPage() {
           <div className="page-shell relative py-10 sm:py-14 lg:py-20">
             <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
               <div className="max-w-xl">
-                <p className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-700">
+                <p className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-blue-700">
                   Facts • Evidence • Clarity
                 </p>
-                <h1 className="text-4xl font-black leading-[0.96] tracking-[-0.08em] text-slate-900 sm:text-5xl lg:text-[4.25rem]">
+                <h1 className="text-4xl font-extrabold leading-[0.96] tracking-[-0.08em] text-slate-900 sm:text-5xl lg:text-[4.35rem]">
                   Check claims with <span className="text-blue-600">evidence</span>, not assumptions.
                 </h1>
                 <p className="mt-5 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
-                  TruthLens helps journalists, researchers, and citizens verify public claims, compare independent sources, and assess uncertainty before drawing conclusions.
+                  TruthLens helps journalists, researchers, and citizens verify public claims, compare independent sources, and assess uncertainty before drawing a well-supported conclusion.
                 </p>
 
                 <div className="mt-8 rounded-[28px] border border-slate-200 bg-white/80 p-3 shadow-[0_24px_70px_rgba(37,99,235,0.08)] backdrop-blur-sm">

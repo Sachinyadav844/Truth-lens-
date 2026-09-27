@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, 'Segoe UI', sans-serif;
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
   line-height: 1.5;
-  font-weight: 400;
+  font-weight: 500;
   color: #0f172a;
   background: #eef4ff;
   font-synthesis: none;
@@ -13,7 +13,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --primary: #2563eb;
-  --primary-soft: #f0f4ff;
+  --primary-dark: #1d4ed8;
+  --primary-soft: #eef4ff;
   --surface: #ffffff;
   --muted: #64748b;
   --border: #dfe7f8;
@@ -27,7 +28,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  background: linear-gradient(180deg, #f3f7ff 0%, #ffffff 280px);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 260px);
   color: #0f172a;
 }
 
@@ -60,15 +61,15 @@ textarea {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition duration-200 ease-in-out;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold tracking-[-0.01em] transition duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-2 active:translate-y-px;
   }
 
   .btn-primary {
-    @apply btn bg-[#2563eb] text-white shadow-[0_10px_25px_rgba(37,99,235,0.15)] hover:bg-[#1d4ed8];
+    @apply btn bg-[#2563eb] text-white shadow-[0_12px_24px_rgba(37,99,235,0.2)] hover:bg-[#1d4ed8];
   }
 
   .btn-secondary {
-    @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+    @apply btn border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50;
   }
 
   .form-field {
@@ -76,11 +77,11 @@ textarea {
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
+    @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
   }
 
   .nav-link {
-    @apply inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 transition hover:text-blue-700;
+    @apply inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:text-blue-700;
   }
 
   .stat-card {

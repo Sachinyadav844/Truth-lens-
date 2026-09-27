@@ -1,4 +1,5 @@
-import { ArrowUpRight, Quote } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, ChevronUp, Quote } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 const toneMap = {
   supporting: 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -17,9 +18,15 @@ function isSafeUrl(value) {
 }
 
 export default function EvidenceCard({ item, category = 'supporting' }) {
+  const [expanded, setExpanded] = useState(false)
+
   if (!item) return null
 
   const safeUrl = isSafeUrl(item.sourceUrl) ? item.sourceUrl : ''
+  const shortened = useMemo(() => {
+    const statement = item.statement || 'Evidence statement unavailable.'
+    return statement.length > 220 && !expanded ? `${statement.slice(0, 220).trim()}…` : statement
+  }, [expanded, item.statement])
 
   return (
     <article className={`rounded-2xl border p-5 ${toneMap[category] || toneMap.supporting}`}>
@@ -33,7 +40,7 @@ export default function EvidenceCard({ item, category = 'supporting' }) {
         </div>
       </div>
 
-      <p className="break-words text-base font-medium text-slate-900">{item.statement || 'Evidence statement unavailable.'}</p>
+      <p className="break-words text-base font-medium text-slate-900">{shortened}</p>
       <p className="mt-3 break-words text-sm text-slate-700">{item.reason || 'No explanation was supplied.'}</p>
 
       <div className="mt-5 space-y-2 border-t border-slate-200/80 pt-4 text-sm text-slate-600">
@@ -45,13 +52,26 @@ export default function EvidenceCard({ item, category = 'supporting' }) {
           <span className="font-medium text-slate-700">Source</span>
           {safeUrl ? (
             <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 break-words items-start gap-1 text-blue-700 hover:underline sm:justify-end">
-              <span>{item.sourceTitle || 'Source unavailable'}</span> <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{item.sourceTitle || 'Source information unavailable'}</span> <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             </a>
           ) : (
-            <span className="min-w-0 break-words text-slate-600 sm:text-right">{item.sourceTitle || 'Source unavailable'}</span>
+            <span className="min-w-0 break-words text-slate-600 sm:text-right">{item.sourceTitle || 'Source information unavailable'}</span>
           )}
         </div>
       </div>
+
+      {(item.statement || '').length > 220 && (
+        <button
+          type="button"
+          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse evidence statement' : 'Expand evidence statement'}
+        >
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
     </article>
   )
 }

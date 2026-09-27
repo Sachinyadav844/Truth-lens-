@@ -20,24 +20,24 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-sm">
       <div className="page-shell">
-        <nav className="flex items-center justify-between py-4">
-          <Link to="/" className="flex items-center gap-3 text-[2rem] font-black leading-none text-ink-900">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-brand shadow-sm">
+        <nav className="flex items-center justify-between gap-3 py-4">
+          <Link to="/" className="flex items-center gap-3 leading-none text-ink-900">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-blue-600 shadow-sm">
               <Search className="h-4 w-4" />
             </span>
-            <span className="text-[2rem] font-black tracking-[-0.08em]">
-              <span className="text-ink-900">Truth</span>
-              <span className="text-brand">Lens</span>
+            <span className="text-[1.55rem] font-extrabold tracking-[-0.08em] sm:text-[1.75rem]">
+              <span className="text-slate-900">Truth</span>
+              <span className="text-blue-600">Lens</span>
             </span>
           </Link>
 
-          <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-6 md:flex">
             {navItems.map((item) => (
               <NavLink
                 key={item.label}
                 to={item.to}
                 className={({ isActive }) =>
-                  `nav-link ${isActive || (item.to === '/' && isLanding) ? 'text-brand' : 'text-ink-600'}`
+                  `nav-link ${isActive || (item.to === '/' && isLanding) ? 'text-blue-700' : 'text-slate-600 hover:text-blue-700'}`
                 }
               >
                 {item.label}
@@ -54,13 +54,13 @@ export default function Navbar() {
                 <Link to="/check" className="btn-primary">
                   Check a claim
                 </Link>
-                <Link to="/history" className="nav-link">
+                <Link to="/history" className="nav-link text-slate-600 hover:text-blue-700">
                   History
                 </Link>
                 <button type="button" onClick={logout} className="btn btn-secondary">
                   Sign out
                 </button>
-                <div className="ml-1 flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-sm font-semibold text-brand">
+                <div className="ml-1 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
                   {user?.name?.charAt(0) || 'U'}
                 </div>
               </>
@@ -88,12 +88,12 @@ export default function Navbar() {
 
         {open && (
           <div className="border-t border-slate-200 bg-white py-4 md:hidden">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               {navItems.map((item) => (
                 <NavLink
                   key={item.label}
                   to={item.to}
-                  className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-blue-700"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
@@ -107,7 +107,7 @@ export default function Navbar() {
                   <Link to="/check" className="btn-primary" onClick={() => setOpen(false)}>
                     Check a claim
                   </Link>
-                  <Link to="/history" className="nav-link" onClick={() => setOpen(false)}>
+                  <Link to="/history" className="btn btn-secondary" onClick={() => setOpen(false)}>
                     History
                   </Link>
                   <button type="button" className="btn btn-secondary" onClick={() => { logout(); setOpen(false); }}>

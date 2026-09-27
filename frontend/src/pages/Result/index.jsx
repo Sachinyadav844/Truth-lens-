@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
@@ -11,11 +11,11 @@ import LoadingState from '../../components/LoadingState'
 import ErrorState from '../../components/ErrorState'
 import { mapCheckResponse } from '../../utils/mappers'
 
-const tabs = ['supporting', 'contradicting', 'unclear']
+const tabs = ['all', 'supporting', 'contradicting', 'unclear']
 
 export default function ResultPage() {
   const { id } = useParams()
-  const [activeTab, setActiveTab] = useState('supporting')
+  const [activeTab, setActiveTab] = useState('all')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -36,7 +36,24 @@ export default function ResultPage() {
   if (loading) return <><Navbar /><main className="page-shell py-10"><LoadingState title="Loading investigation" description="Assembling the claim and its evidence..." /></main><Footer /></>
   if (error || !result) return <><Navbar /><main className="page-shell py-10"><ErrorState title="Investigation unavailable" message={error || 'No result was returned.'} /></main><Footer /></>
 
-  const tabData = result.evidence[activeTab] || []
+  const evidenceSummary = useMemo(() => ({
+    supporting: result.evidence.supporting.length,
+    contradicting: result.evidence.contradicting.length,
+    unclear: result.evidence.unclear.length,
+    total: result.evidence.supporting.length + result.evidence.contradicting.length + result.evidence.unclear.length,
+  }), [result.evidence])
+
+  const filteredEvidence = useMemo(() => {
+    if (activeTab === 'all') {
+      return [
+        ...result.evidence.supporting,
+        ...result.evidence.contradicting,
+        ...result.evidence.unclear,
+      ]
+    }
+
+    return result.evidence[activeTab] || []
+  }, [activeTab, result.evidence])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -70,7 +87,7 @@ export default function ResultPage() {
                 <RiskBadge level={result.assessment.riskLevel} />
               </div>
               <div className="mt-5 flex items-center justify-between text-sm font-medium text-slate-600">
-                <span>Confidence</span>
+                <span>Evidence confidence</span>
                 <span className="text-xl font-black text-slate-900">{Math.round(result.assessment.confidence * 100)}%</span>
               </div>
             </div>
@@ -83,6 +100,25 @@ export default function ResultPage() {
             <h2 className="text-2xl font-black tracking-[-0.06em] text-slate-900">Summary</h2>
           </div>
           <p className="text-lg leading-8 text-slate-700">{result.assessment.summary || 'No summary is available for this claim yet.'}</p>
+        </section>
+
+        <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="truth-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Supporting</p>
+            <p className="mt-3 text-3xl font-black tracking-[-0.07em] text-slate-900">{evidenceSummary.supporting}</p>
+          </div>
+          <div className="truth-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Contradicting</p>
+            <p className="mt-3 text-3xl font-black tracking-[-0.07em] text-slate-900">{evidenceSummary.contradicting}</p>
+          </div>
+          <div className="truth-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Unclear</p>
+            <p className="mt-3 text-3xl font-black tracking-[-0.07em] text-slate-900">{evidenceSummary.unclear}</p>
+          </div>
+          <div className="truth-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Total evidence</p>
+            <p className="mt-3 text-3xl font-black tracking-[-0.07em] text-slate-900">{evidenceSummary.total}</p>
+          </div>
         </section>
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
@@ -98,23 +134,24 @@ export default function ResultPage() {
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
+                  aria-pressed={activeTab === tab}
                   className={`rounded-full border px-3 py-2 text-sm font-semibold capitalize transition ${
                     activeTab === tab
                       ? 'border-blue-200 bg-blue-50 text-blue-700'
                       : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                   }`}
                 >
-                  {tab} ({result.evidence[tab]?.length || 0})
+                  {tab === 'all' ? 'All' : tab} ({tab === 'all' ? evidenceSummary.total : result.evidence[tab]?.length || 0})
                 </button>
               ))}
             </div>
 
             <div className="space-y-4">
-              {tabData.length > 0 ? (
-                tabData.map((item) => <EvidenceCard key={item.id} item={item} category={activeTab} />)
+              {filteredEvidence.length > 0 ? (
+                filteredEvidence.map((item) => <EvidenceCard key={`${item.id}-${item.relationship || activeTab}`} item={item} category={item.relationship || activeTab} />)
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500">
-                  No {activeTab} evidence found.
+                  No {activeTab === 'all' ? 'evidence' : activeTab} evidence found for this investigation.
                 </div>
               )}
             </div>
@@ -130,9 +167,9 @@ export default function ResultPage() {
           </div>
         </section>
 
-        <section className="mt-8 truth-card p-6">
-          <h2 className="text-2xl font-black tracking-[-0.06em] text-slate-900">Suggested verification</h2>
-          {result.suggestedVerification.length > 0 ? (
+        {result.suggestedVerification.length > 0 && (
+          <section className="mt-8 truth-card p-6">
+            <h2 className="text-2xl font-black tracking-[-0.06em] text-slate-900">Suggested verification</h2>
             <ul className="mt-5 space-y-3 text-base text-slate-700">
               {result.suggestedVerification.map((item) => (
                 <li key={item} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -141,10 +178,8 @@ export default function ResultPage() {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-4 text-sm text-slate-500">No suggested verification steps were provided for this investigation.</p>
-          )}
-        </section>
+          </section>
+        )}
       </main>
 
       <Footer />
