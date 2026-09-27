@@ -6,7 +6,7 @@ Truth-lens is a full-stack claim verification workspace. The repository contains
 
 - `frontend/` - React user interface
 - `backend/` - Express API
-- `ai/prompts/` - reusable analysis prompts
+- `backend/prompts/` - reusable analysis prompts
 - `docs/` - architecture, API, decisions, and demo notes
 
 ## Setup
