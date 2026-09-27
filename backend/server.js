@@ -4,6 +4,7 @@ import express from 'express'
 import mongoose from 'mongoose'
 import authRoutes from './routes/auth.routes.js'
 import checkRoutes from './routes/check.routes.js'
+import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
 const port = process.env.PORT || 4000
@@ -18,6 +19,14 @@ mongoose.connect(process.env.MONGO_URI)
 
 app.get('/api/health', (_request, response) => response.json({ status: 'ok' }))
 app.use('/api/auth', authRoutes)
+app.use('/api/check', checkRoutes)
 app.use('/api/checks', checkRoutes)
+
+app.use((_request, _response, next) => {
+  const error = new Error('Route not found')
+  error.status = 404
+  next(error)
+})
+app.use(errorHandler)
 
 app.listen(port, () => console.log(`Truth-lens API listening on port ${port}`))
