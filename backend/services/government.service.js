@@ -1,6 +1,12 @@
+import { filterByQuery } from "./queryFilter.service.js";
+
 const PIB_URL = "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3";
 
-async function fetchPIB() {
+// --------------------------------------------------
+// PIB RSS fetch + query filtering
+// --------------------------------------------------
+
+async function fetchPIB(query = "") {
   const response = await fetch(PIB_URL);
 
   if (!response.ok) {
@@ -17,7 +23,8 @@ async function fetchPIB() {
     throw new Error("PIB RSS feed returned 0 articles");
   }
 
-  return items.map((match) => {
+  // Convert XML items into normal JS objects
+  const articles = items.map((match) => {
     const item = match[1];
 
     const getTag = (tag) => {
@@ -30,15 +37,39 @@ async function fetchPIB() {
 
     return {
       title: getTag("title"),
-      description: getTag("description"),
       link: getTag("link"),
+      description: getTag("description"),
       pubDate: getTag("pubDate"),
       source: "PIB",
     };
   });
+
+  // -----------------------------------------------
+  // No query → return all PIB articles
+  // -----------------------------------------------
+
+  if (!query || !query.trim()) {
+    return articles;
+  }
+
+  // -----------------------------------------------
+  // Query → filter relevant PIB articles
+  // -----------------------------------------------
+
+  const filteredArticles = filterByQuery(articles, query);
+
+  console.log(
+    `PIB articles: ${articles.length} → ${filteredArticles.length} relevant`,
+  );
+
+  return filteredArticles;
 }
 
-async function fetchDataGov() {
+// --------------------------------------------------
+// data.gov.in backup
+// --------------------------------------------------
+
+async function fetchDataGov(query = "") {
   const url = process.env.DATA_GOV_API_URL;
   const apiKey = process.env.DATA_GOV_API_KEY;
 
@@ -56,33 +87,49 @@ async function fetchDataGov() {
     throw new Error(`data.gov.in request failed: ${response.status}`);
   }
 
-  const data = await response.json();
+  const payload = await response.json();
+  const records = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.records)
+      ? payload.records
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.results)
+          ? payload.results
+          : [];
 
   return {
     source: "data.gov.in",
-    data,
+    data: filterByQuery(records, query),
   };
 }
 
-export async function getGovernmentNews() {
+// --------------------------------------------------
+// Main government service
+// --------------------------------------------------
+
+export async function getGovernmentNews(query = "") {
   try {
     console.log("Trying PIB...");
 
-    const data = await fetchPIB();
+    const articles = await fetchPIB(query);
 
     return {
       source: "PIB",
-      articles: data,
+      articles,
     };
   } catch (pibError) {
     console.error("PIB failed:", pibError.message);
+
     console.log("Trying data.gov.in backup...");
 
     try {
-      return await fetchDataGov();
+      return await fetchDataGov(query);
     } catch (govError) {
       throw new Error(
-        `Both government sources failed. PIB: ${pibError.message} | data.gov.in: ${govError.message}`,
+        `Both government sources failed. ` +
+          `PIB: ${pibError.message} | ` +
+          `data.gov.in: ${govError.message}`,
       );
     }
   }
