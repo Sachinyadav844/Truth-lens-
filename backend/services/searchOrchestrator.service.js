@@ -1,6 +1,11 @@
 import { getNews } from "./news.service.js";
 import { getGovernmentNews } from "./government.service.js";
 import { searchResearch } from "./research.service.js";
+import { rankResults } from "./relevanceRanker.service.js";
+
+// --------------------------------------------------
+// Remove duplicate results
+// --------------------------------------------------
 
 function deduplicate(items) {
   const seen = new Set();
@@ -8,55 +13,169 @@ function deduplicate(items) {
   return items.filter((item) => {
     const key = item.url || item.link || item.title?.toLowerCase().trim();
 
-    if (!key || seen.has(key)) {
+    // If there is no unique identifier,
+    // keep the item instead of accidentally removing it.
+    if (!key) {
+      return true;
+    }
+
+    if (seen.has(key)) {
       return false;
     }
 
     seen.add(key);
+
     return true;
   });
 }
 
+// --------------------------------------------------
+// Normalize source name
+// --------------------------------------------------
+
+function normalizeSource(item, fallbackSource) {
+  // NewsAPI:
+  // source can be:
+  // { id: "...", name: "BBC News" }
+
+  if (typeof item.source === "object") {
+    return item.source?.name || fallbackSource;
+  }
+
+  if (typeof item.source === "string") {
+    return item.source;
+  }
+
+  return fallbackSource;
+}
+
+// --------------------------------------------------
+// Normalize individual result
+// --------------------------------------------------
+
+function normalizeItem(item, source) {
+  return {
+    ...item,
+
+    source: normalizeSource(item, source),
+
+    title: item.title || item.name || "Untitled",
+
+    description: item.description || item.abstract || "",
+
+    url: item.url || item.link || item.doi || null,
+  };
+}
+
+// --------------------------------------------------
+// Search all external sources
+// --------------------------------------------------
+
 export async function searchAll(query) {
+  if (!query || typeof query !== "string") {
+    throw new Error("Search query is required");
+  }
+
+  const cleanQuery = query.trim();
+
+  if (!cleanQuery) {
+    throw new Error("Search query cannot be empty");
+  }
+
+  // ------------------------------------------------
+  // Call all sources in parallel
+  // ------------------------------------------------
+
   const results = await Promise.allSettled([
-    getNews(query),
-    getGovernmentNews(query),
-    searchResearch(query),
+    getNews(cleanQuery),
+    getGovernmentNews(cleanQuery),
+    searchResearch(cleanQuery),
   ]);
 
-  const sources = ["news", "government", "research"];
+  const sourceNames = ["NewsAPI", "PIB", "OpenAlex"];
 
   const combined = [];
   const failures = [];
 
+  // ------------------------------------------------
+  // Process every source result
+  // ------------------------------------------------
+
   results.forEach((result, index) => {
-    const source = sources[index];
+    const sourceName = sourceNames[index];
+
+    // ----------------------------------------------
+    // Source successful
+    // ----------------------------------------------
 
     if (result.status === "fulfilled") {
       const value = result.value;
 
-      const items = value.articles || value.papers || value.data || [];
+      // Different services may return different
+      // property names.
+      //
+      // NewsAPI       -> articles
+      // PIB           -> articles
+      // OpenAlex      -> papers
+      //
+      let items = [];
 
-      combined.push(
-        ...items.map((item) => ({
-          ...item,
-          source:
-            typeof item.source === "object"
-              ? item.source?.name
-              : item.source || value.source || source,
-        })),
+      if (Array.isArray(value?.articles)) {
+        items = value.articles;
+      } else if (Array.isArray(value?.papers)) {
+        items = value.papers;
+      } else if (Array.isArray(value?.data)) {
+        items = value.data;
+      }
+
+      // Normalize every result
+      const normalizedItems = items.map((item) =>
+        normalizeItem(item, sourceName),
       );
-    } else {
+
+      combined.push(...normalizedItems);
+
+      console.log(` ${sourceName}: ${normalizedItems.length} results`);
+    }
+
+    // ----------------------------------------------
+    // Source failed
+    // ----------------------------------------------
+    else {
+      const errorMessage = result.reason?.message || "Unknown error";
+
       failures.push({
-        source,
-        error: result.reason?.message || "Unknown error",
+        source: sourceName,
+        error: errorMessage,
       });
+
+      console.error(` ${sourceName}: ${errorMessage}`);
     }
   });
 
+  // ------------------------------------------------
+  // Remove duplicates
+  // ------------------------------------------------
+
+  const uniqueResults = deduplicate(combined);
+
+  // ------------------------------------------------
+  // Rank results according to query
+  // ------------------------------------------------
+
+  const rankedResults = rankResults(cleanQuery, uniqueResults, 20);
+
+  // ------------------------------------------------
+  // Return final response
+  // ------------------------------------------------
+
   return {
-    query,
-    results: deduplicate(combined),
+    query: cleanQuery,
+
+    totalResults: rankedResults.length,
+
+    results: rankedResults,
+
     failures,
   };
 }
