@@ -31,6 +31,14 @@ app.use('/api/auth', authRoutes)
 app.use('/api/check', checkRoutes)
 app.use('/api/checks', checkRoutes)
 
+// UptimeRobot Health Check Route
+app.get('/', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "TruthLens API is active and running!"
+    });
+});
+
 app.use((_request, _response, next) => {
   const error = new Error('Route not found')
   error.status = 404
