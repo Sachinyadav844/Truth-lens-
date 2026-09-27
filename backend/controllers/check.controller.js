@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import mongoose from 'mongoose'
 import Check from '../models/check.model.js'
 import Result from '../models/result.model.js'
@@ -108,22 +107,6 @@ export async function getCheckById(request, response, next) {
 
     const result = await Result.findOne({ checkId: check._id }).exec()
     return response.json(formatCheck(check, result))
-=======
-import { checks, buildCheckResult } from '../utils/store.js'
-
-export async function createCheck(request, response) {
-  try {
-    const rawContent = request.body?.content ?? request.body?.claim
-    const content = typeof rawContent === 'string' ? rawContent.trim() : ''
-
-    if (!content) {
-      return response.status(400).json({ message: 'A claim is required.' })
-    }
-
-    const result = buildCheckResult(content)
-    checks.set(result.checkId, result)
-    return response.status(201).json(result)
->>>>>>> 209e3c227fe7b81c98e09fcb867039ca249750c9
   } catch (error) {
     return response.status(500).json({ message: 'The analysis service is temporarily unavailable.' })
   }
