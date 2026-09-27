@@ -45,9 +45,10 @@ export async function createCheck(request, response, next) {
     const searchResults = await Promise.all(
       subClaims.map((query) => orchestrateSearch(query))
     )
+    const sources = searchResults.flatMap((searchResult) => searchResult.sources)
 
-    // The AI service contract accepts the original claim, decomposed claims, and search results.
-    const analysis = await analyzeClaim({ claim, subClaims, searchResults })
+    // The AI service receives the original claim, decomposed claims, and unified sources.
+    const analysis = await analyzeClaim({ claim, subClaims, sources })
     const result = await Result.create({
       checkId: check._id,
       assessment: analysis.assessment,

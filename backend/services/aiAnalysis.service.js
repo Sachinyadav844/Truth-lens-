@@ -16,6 +16,6 @@ export async function analyzeClaim(data) {
 			contradicting: evidence.contradicting ?? [],
 			unclear: evidence.unclear ?? []
 		},
-		sources: analysis.sources ?? data.searchResults.flatMap((result) => result.items ?? [])
+		sources: analysis.sources ?? data.sources ?? data.searchResults?.flatMap((result) => result.items ?? []) ?? []
 	}
 }
