@@ -7,24 +7,22 @@ import { rankResults } from "./relevanceRanker.service.js";
 // Remove duplicate results
 // --------------------------------------------------
 
+function normalizeKey(value = '') {
+  return String(value).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 function deduplicate(items) {
   const seen = new Set();
 
   return items.filter((item) => {
-    const key = item.url || item.link || item.title?.toLowerCase().trim();
+    const url = normalizeKey(item.url);
+    const title = normalizeKey(item.title);
+    const source = normalizeKey(item.source);
+    const content = normalizeKey(item.content || item.description || item.abstract);
+    const key = url || (title && `${title}|${source}`) || (content && `content|${content.slice(0, 240)}`);
 
-    // If there is no unique identifier,
-    // keep the item instead of accidentally removing it.
-    if (!key) {
-      return true;
-    }
-
-    if (seen.has(key)) {
-      return false;
-    }
-
+    if (!key || seen.has(key)) return false;
     seen.add(key);
-
     return true;
   });
 }
@@ -54,10 +52,13 @@ function normalizeSource(item, fallbackSource) {
 // --------------------------------------------------
 
 function normalizeItem(item, source) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+
   return {
     ...item,
 
     source: normalizeSource(item, source),
+    sourceType: source === 'OpenAlex' ? 'research' : source === 'PIB' || source === 'data.gov.in' ? 'government' : 'news',
 
     title: item.title || item.name || "Untitled",
 
@@ -96,6 +97,7 @@ export async function searchAll(query) {
 
   const combined = [];
   const failures = [];
+  const providerStatuses = [];
 
   // ------------------------------------------------
   // Process every source result
@@ -129,11 +131,12 @@ export async function searchAll(query) {
       }
 
       // Normalize every result
-      const normalizedItems = items.map((item) =>
-        normalizeItem(item, sourceName),
-      );
+      const normalizedItems = items
+        .map((item) => normalizeItem(item, sourceName))
+        .filter(Boolean);
 
       combined.push(...normalizedItems);
+      providerStatuses.push({ provider: sourceName, status: 'ok', results: normalizedItems.length });
 
       console.log(` ${sourceName}: ${normalizedItems.length} results`);
     }
@@ -148,6 +151,7 @@ export async function searchAll(query) {
         source: sourceName,
         error: errorMessage,
       });
+      providerStatuses.push({ provider: sourceName, status: 'failed', results: 0, error: errorMessage });
 
       console.error(` ${sourceName}: ${errorMessage}`);
     }
@@ -177,10 +181,11 @@ export async function searchAll(query) {
     results: rankedResults,
 
     failures,
+    providerStatuses,
   };
 }
 
 export async function orchestrateSearch(query) {
-  const { results, failures } = await searchAll(query);
-  return { sources: results, failures };
+  const { results, failures, providerStatuses } = await searchAll(query);
+  return { sources: results, failures, providerStatuses };
 }

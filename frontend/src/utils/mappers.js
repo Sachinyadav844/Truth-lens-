@@ -86,15 +86,18 @@ export function mapHistoryItem(item) {
     }
   }
 
-  const id = item.checkId || item.id || ''
-  const evidenceCount = typeof item.evidenceCount === 'number' ? item.evidenceCount : 0
+  const id = typeof item.checkId === 'object' ? item.checkId?._id || item.checkId?.id || '' : item.checkId || item.id || ''
+  const evidenceCount = typeof item.evidenceCount === 'number'
+    ? item.evidenceCount
+    : ['supporting', 'contradicting', 'unclear'].reduce((count, category) => count + (Array.isArray(item.evidence?.[category]) ? item.evidence[category].length : 0), 0)
   const claimText = item.claim || item.originalClaim || 'Unknown claim'
+  const assessment = item.assessment || {}
 
   return {
     id,
     claim: claimText,
-    risk: normalizeRisk(item.riskLevel || item.risk || 'medium', 'medium'),
-    confidence: normalizeConfidence(item.confidence ?? 0, 0),
+    risk: normalizeRisk(item.riskLevel || item.risk || assessment.riskLevel || 'unknown', 'unknown'),
+    confidence: normalizeConfidence(item.confidence ?? assessment.confidence ?? 0, 0),
     evidenceCount,
     date: item.createdAt || item.date || item.updatedAt || null,
   }

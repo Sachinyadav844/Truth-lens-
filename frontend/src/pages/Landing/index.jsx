@@ -5,8 +5,7 @@ import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import ClaimInput from '../../components/ClaimInput'
 import FeatureCard from '../../components/FeatureCard'
-import InvestigationCard from '../../components/InvestigationCard'
-import { exampleClaims, featureCards, recentInvestigations } from '../../utils/mockData'
+import { exampleClaims, featureCards } from '../../utils/mockData'
 import { heroImageSources } from '../../utils/imageSources'
 
 const iconMap = {
@@ -103,24 +102,15 @@ export default function LandingPage() {
 
               <div className="relative mx-auto w-full max-w-[560px]">
                 <div className="grid gap-4 sm:grid-cols-[1.15fr_0.85fr]">
-                  <HeroImageCard src={heroImageSources.newsroom} alt="People reading a newspaper and reviewing information" className="h-[260px] sm:h-[340px]" badge="Live sources" />
+                  <HeroImageCard src={heroImageSources.newsroom} alt="People reading a newspaper and reviewing information" className="h-[260px] sm:h-[340px]" badge="Source search" />
                   <div className="space-y-4">
                     <HeroImageCard src={heroImageSources.research} alt="Research documents and analysis materials" className="h-[170px] sm:h-[180px]" badge="Evidence" />
                     <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_20px_40px_rgba(15,23,42,0.04)]">
-                      <div className="mb-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Assessment</p>
-                          <p className="mt-1 text-2xl font-black tracking-[-0.06em] text-slate-900">78%</p>
-                        </div>
-                        <div className="rounded-full bg-emerald-100 p-2 text-emerald-700">
-                          <ShieldCheck className="h-4 w-4" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-2 rounded-full bg-slate-200">
-                          <div className="h-full w-[78%] rounded-full bg-blue-600" />
-                        </div>
-                        <p className="text-xs text-slate-500">Confidence based on independent corroboration.</p>
+                      <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Evidence categories</p>
+                      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                        <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">Supporting</span>
+                        <span className="rounded-full bg-rose-50 px-3 py-1.5 text-rose-700">Contradicting</span>
+                        <span className="rounded-full bg-amber-50 px-3 py-1.5 text-amber-700">Unclear</span>
                       </div>
                     </div>
                   </div>
@@ -203,24 +193,6 @@ export default function LandingPage() {
                 </article>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="page-shell py-12 sm:py-16 lg:py-20">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-blue-600">Recent investigations</p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.07em] text-slate-900 sm:text-4xl">Examples of evidence-led reporting.</h2>
-            </div>
-            <Link to="/history" className="inline-flex items-center gap-2 text-base font-semibold text-blue-700">
-              View all <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-3">
-            {recentInvestigations.map((item) => (
-              <InvestigationCard key={item.id} item={item} />
-            ))}
           </div>
         </section>
 

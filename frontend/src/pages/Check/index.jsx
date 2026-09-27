@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { CheckCheck, FileSearch, SearchCheck, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCheck, FileSearch, LoaderCircle, SearchCheck, Sparkles } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
@@ -7,35 +7,13 @@ import ClaimInput from '../../components/ClaimInput'
 import { exampleClaims } from '../../utils/mockData'
 import { useClaimCheck } from '../../hooks/useClaimCheck'
 
-const steps = [
-  'Understanding claim',
-  'Breaking into subclaims',
-  'Searching sources',
-  'Extracting evidence',
-  'Comparing evidence',
-  'Preparing neutral summary',
-]
-
 export default function CheckPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [claim, setClaim] = useState(location.state?.claim || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [progressIndex, setProgressIndex] = useState(0)
   const { run } = useClaimCheck()
-
-  useEffect(() => {
-    if (!loading) return undefined
-
-    const interval = setInterval(() => {
-      setProgressIndex((current) => (current >= steps.length - 1 ? current : current + 1))
-    }, 500)
-
-    return () => {
-      clearInterval(interval)
-    }
-  }, [loading])
 
   const validateClaim = (value) => {
     const trimmed = value.trim()
@@ -56,7 +34,6 @@ export default function CheckPage() {
     }
 
     setError('')
-    setProgressIndex(0)
     setLoading(true)
 
     const result = await run(claim.trim())
@@ -111,31 +88,12 @@ export default function CheckPage() {
             ) : (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-                  <Sparkles className="h-4 w-4" />
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
                   Analyzing claim: “{claim.trim() || 'Your claim'}”
                 </div>
-
-                <div className="space-y-4">
-                  {steps.map((step, index) => (
-                    <div key={step} className="flex items-start gap-3">
-                      <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${index <= progressIndex ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                        {index + 1}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-2 flex items-center justify-between gap-2 text-sm font-medium text-slate-700">
-                          <span>{step}</span>
-                          <span className={index <= progressIndex ? 'text-blue-700' : 'text-slate-400'}>
-                            {index <= progressIndex ? 'Complete' : 'Queued'}
-                          </span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                          <div
-                            className={`h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-500 ${index <= progressIndex ? 'w-full' : 'w-0'}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <p className="text-sm text-slate-600">Waiting for the backend to retrieve sources and complete its analysis.</p>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label="Investigation in progress">
+                  <div className="h-full w-1/3 animate-pulse rounded-full bg-blue-600" />
                 </div>
               </div>
             )}

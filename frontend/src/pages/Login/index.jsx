@@ -1,12 +1,13 @@
 import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import { useAuth } from '../../context/AuthContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
@@ -35,7 +36,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(form)
-      navigate('/dashboard', { replace: true })
+      navigate(location.state?.from || '/dashboard', { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'Unable to sign in.')
     } finally {
@@ -106,7 +107,7 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-center text-sm text-slate-600">
-              Need an account? <Link to="/signup" className="font-semibold text-blue-700 hover:underline">Create one</Link>
+              Need an account? <Link to="/signup" state={location.state} className="font-semibold text-blue-700 hover:underline">Create one</Link>
             </p>
           </div>
         </div>

@@ -1,17 +1,23 @@
 import mongoose from 'mongoose'
 
 const assessmentSchema = new mongoose.Schema({
+	verdict: { type: String, required: true },
 	riskLevel: { type: String, required: true },
 	confidence: { type: Number, required: true },
-	summary: { type: String, required: true }
+	summary: { type: String, required: true },
+	reasoning: { type: String, default: '' },
+	limitations: { type: [String], default: [] }
 }, { _id: false })
 
 const SourceSchema = new mongoose.Schema({
+	sourceId: String,
 	type: String,
+	sourceType: String,
 	title: String,
 	publisher: String,
 	url: String,
-	publishedAt: String
+	publishedAt: String,
+	content: String
 }, { _id: false, strict: true })
 
 const EvidenceSchema = new mongoose.Schema({
@@ -25,6 +31,13 @@ const EvidenceSchema = new mongoose.Schema({
 	sourceUrl: String,
 	confidence: Number
 }, { _id: false, strict: true })
+
+const providerStatusSchema = new mongoose.Schema({
+	provider: { type: String, required: true },
+	status: { type: String, enum: ['ok', 'failed'], required: true },
+	results: { type: Number, default: 0 },
+	error: { type: String, default: '' }
+}, { _id: false })
 
 const evidenceSchema = new mongoose.Schema({
 	supporting: { type: [EvidenceSchema], default: [] },
@@ -41,7 +54,8 @@ const resultSchema = new mongoose.Schema({
 	},
 	assessment: { type: assessmentSchema, required: true },
 	evidence: { type: evidenceSchema, default: () => ({}) },
-	sources: { type: [SourceSchema], default: [] }
+	sources: { type: [SourceSchema], default: [] },
+	providerStatuses: { type: [providerStatusSchema], default: [] }
 }, { timestamps: true })
 
 export const Result = mongoose.models.Result || mongoose.model('Result', resultSchema)

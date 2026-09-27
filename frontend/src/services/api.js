@@ -2,7 +2,7 @@ import axios from 'axios'
 import { clearSession, getSession } from '../utils/authStorage'
 
 function getBaseApiUrl() {
-  const raw = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000'
+  const raw = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000'
   return String(raw).replace(/\/$/, '')
 }
 
@@ -13,16 +13,33 @@ function normalizeApiError(error, fallback) {
     return 'Please check your internet connection and try again.'
   }
 
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+    return 'The request timed out. Please try again.'
+  }
+
   if (error.response?.status === 400) {
-    return error.response?.data?.message || 'Please check your details and try again.'
+    return 'Please check your details and try again.'
   }
 
   if (error.response?.status === 401) {
+    if (error.config?.url?.includes('/auth/login')) return 'Invalid email or password.'
     return 'Your session has expired. Please sign in again.'
+  }
+
+  if (error.response?.status === 403) {
+    return 'You do not have permission to perform this action.'
   }
 
   if (error.response?.status === 404) {
     return 'The requested record could not be found.'
+  }
+
+  if (error.response?.status === 409 && error.config?.url?.includes('/auth/signup')) {
+    return 'An account with this email already exists.'
+  }
+
+  if (error.response?.status === 408 || error.response?.status === 504) {
+    return 'The request timed out. Please try again.'
   }
 
   if (error.response?.status === 429) {
@@ -33,8 +50,7 @@ function normalizeApiError(error, fallback) {
     return 'The server is temporarily unavailable. Please try again.'
   }
 
-  const backendMessage = error.response?.data?.message || error.response?.data?.error || error.message
-  return backendMessage || fallback
+  return fallback
 }
 
 export function createApiClient() {
@@ -65,7 +81,7 @@ export function createApiClient() {
   client.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error?.response?.status === 401) {
+      if (error?.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
         clearSession()
         if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
           window.dispatchEvent(new CustomEvent('auth:session-expired'))
@@ -120,7 +136,10 @@ export async function getCheck(id) {
 export async function getHistory() {
   try {
     const response = await api.get('/check/history')
-    return response.data.history || []
+    if (!Array.isArray(response.data?.checks)) {
+      throw new Error('The server returned an invalid history response.')
+    }
+    return response.data.checks
   } catch (error) {
     throw new Error(normalizeApiError(error, 'Unable to load your history.'))
   }
