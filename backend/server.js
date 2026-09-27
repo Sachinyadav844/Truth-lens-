@@ -2,22 +2,31 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import mongoose from 'mongoose'
+import { connectDatabase } from './config/db.js'
 import authRoutes from './routes/auth.routes.js'
 import checkRoutes from './routes/check.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
-const port = process.env.PORT || 4000
+const port = Number(process.env.PORT || 5000)
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }))
 app.use(express.json())
 
-// Database connection logic
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected Successfully!"))
-  .catch((err) => console.log("MongoDB Connection Error: ", err));
+app.get('/api/health', (_request, response) => {
+  const connected = mongoose.connection.readyState === 1
+  return response.status(connected ? 200 : 503).json({
+    status: connected ? 'ok' : 'degraded',
+    database: connected ? 'connected' : 'unavailable'
+  })
+})
 
-app.get('/api/health', (_request, response) => response.json({ status: 'ok' }))
+app.use('/api', (_request, response, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return response.status(503).json({ error: true, message: 'Database is temporarily unavailable' })
+  }
+  return next()
+})
 app.use('/api/auth', authRoutes)
 app.use('/api/check', checkRoutes)
 app.use('/api/checks', checkRoutes)
@@ -29,4 +38,23 @@ app.use((_request, _response, next) => {
 })
 app.use(errorHandler)
 
-app.listen(port, () => console.log(`Truth-lens API listening on port ${port}`))
+async function startServer() {
+  try {
+    await connectDatabase()
+    console.info('MongoDB connected')
+    app.listen(port, () => console.log(`Truth-lens API listening on port ${port}`))
+  } catch (error) {
+    const message = String(error.message || 'Unknown connection error')
+      .replace(/mongodb(?:\+srv)?:\/\/[^\s"'<>]+/gi, '[MongoDB URI redacted]')
+      .replace(/_mongodb\._tcp\.[^\s]+/gi, '_mongodb._tcp.[redacted]')
+
+    console.error('MongoDB connection failed:', {
+      name: error.name || 'Error',
+      message,
+      code: error.code || error.cause?.code || 'n/a'
+    })
+    process.exit(1)
+  }
+}
+
+startServer()

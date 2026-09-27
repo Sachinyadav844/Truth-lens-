@@ -13,17 +13,22 @@ const getJwtSecret = () => {
 
 export const signup = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = req.body?.password;
     
     if (!email || !password) {
       return res.status(400).json({ error: true, message: "Email and password are required" });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof password !== 'string' || password.length < 8 || password.length > 128) {
+      return res.status(400).json({ error: true, message: 'Enter a valid email and a password between 8 and 128 characters' });
     }
 
     const jwtSecret = getJwtSecret();
     
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: true, message: "User already exists" });
+      return res.status(409).json({ error: true, message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -37,16 +42,24 @@ export const signup = async (req, res, next) => {
       user: { id: user._id, email: user.email }
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: true, message: 'User already exists' });
+    }
     next(error);
   }
 };
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = req.body?.password;
 
-    if (!email || !password) {
+    if (!email || typeof password !== 'string') {
       return res.status(400).json({ error: true, message: 'Email and password are required' });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: true, message: 'Enter a valid email address' });
     }
 
     const jwtSecret = getJwtSecret();

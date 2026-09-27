@@ -7,7 +7,7 @@ const PIB_URL = "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3";
 // --------------------------------------------------
 
 async function fetchPIB(query = "") {
-  const response = await fetch(PIB_URL);
+  const response = await fetch(PIB_URL, { signal: AbortSignal.timeout(12000) });
 
   if (!response.ok) {
     throw new Error(`PIB request failed: ${response.status}`);
@@ -81,6 +81,7 @@ async function fetchDataGov(query = "") {
 
   const response = await fetch(
     `${url}${separator}api-key=${encodeURIComponent(apiKey)}&format=json`,
+    { signal: AbortSignal.timeout(12000) },
   );
 
   if (!response.ok) {

@@ -15,13 +15,16 @@ export default function DashboardPage() {
   const [checks, setChecks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
+    setError('')
     getHistory()
       .then((history) => setChecks(mapHistoryResponse(history)))
       .catch((requestError) => setError(requestError.message || 'Unable to load recent investigations.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [reload])
 
   const recentChecks = useMemo(() => checks.slice(0, 3), [checks])
   const displayName = user?.name || 'there'
@@ -45,7 +48,7 @@ export default function DashboardPage() {
     : 0
 
   if (loading) return <><Navbar /><main className="page-shell py-10"><LoadingState title="Loading dashboard" description="Preparing your recent investigations..." /></main><Footer /></>
-  if (error) return <><Navbar /><main className="page-shell py-10"><ErrorState title="Dashboard unavailable" message={error} /></main><Footer /></>
+  if (error) return <><Navbar /><main className="page-shell py-10"><ErrorState title="Dashboard unavailable" message={error} onRetry={() => setReload((current) => current + 1)} /></main><Footer /></>
 
   return (
     <div className="min-h-screen bg-slate-50">

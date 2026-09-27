@@ -10,13 +10,15 @@ function formatCheck(check, result) {
     checkId: String(check._id),
     claim: check.claim,
     subClaims: check.subClaims,
-    status: check.status
+    status: check.status,
+    createdAt: check.createdAt
   }
 
   if (result) {
     formatted.assessment = result.assessment
     formatted.evidence = result.evidence
     formatted.sources = result.sources
+    formatted.providerStatuses = result.providerStatuses
   }
 
   return formatted
@@ -46,6 +48,7 @@ export async function createCheck(request, response, next) {
       subClaims.map((query) => orchestrateSearch(query))
     )
     const sources = searchResults.flatMap((searchResult) => searchResult.sources)
+    const providerStatuses = searchResults.flatMap((searchResult) => searchResult.providerStatuses || [])
 
     // The AI service receives the original claim, decomposed claims, and unified sources.
     const analysis = await analyzeClaim({ claim, subClaims, sources })
@@ -53,17 +56,14 @@ export async function createCheck(request, response, next) {
       checkId: check._id,
       assessment: analysis.assessment,
       evidence: analysis.evidence,
-      sources: analysis.sources
+      sources: analysis.sources,
+      providerStatuses
     })
 
     check.status = 'completed'
     await check.save()
 
-    const populatedResult = await Result.findById(result._id)
-      .populate({ path: 'checkId', select: 'claim subClaims status createdAt' })
-      .exec()
-
-    return response.status(201).json(populatedResult)
+    return response.status(201).json(formatCheck(check, result))
   } catch (error) {
     if (check) {
       check.status = 'failed'

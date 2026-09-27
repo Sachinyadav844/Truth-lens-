@@ -19,8 +19,11 @@ export default function ResultPage() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
+    setError('')
     if (!id) {
       setError('No investigation id was provided.')
       setLoading(false)
@@ -31,19 +34,19 @@ export default function ResultPage() {
       .then((data) => setResult(mapCheckResponse(data)))
       .catch((requestError) => setError(requestError.message || 'Unable to load this investigation.'))
       .finally(() => setLoading(false))
-  }, [id])
-
-  if (loading) return <><Navbar /><main className="page-shell py-10"><LoadingState title="Loading investigation" description="Assembling the claim and its evidence..." /></main><Footer /></>
-  if (error || !result) return <><Navbar /><main className="page-shell py-10"><ErrorState title="Investigation unavailable" message={error || 'No result was returned.'} /></main><Footer /></>
+  }, [id, reload])
 
   const evidenceSummary = useMemo(() => ({
-    supporting: result.evidence.supporting.length,
-    contradicting: result.evidence.contradicting.length,
-    unclear: result.evidence.unclear.length,
-    total: result.evidence.supporting.length + result.evidence.contradicting.length + result.evidence.unclear.length,
-  }), [result.evidence])
+    supporting: result?.evidence.supporting.length || 0,
+    contradicting: result?.evidence.contradicting.length || 0,
+    unclear: result?.evidence.unclear.length || 0,
+    total: (result?.evidence.supporting.length || 0)
+      + (result?.evidence.contradicting.length || 0)
+      + (result?.evidence.unclear.length || 0),
+  }), [result?.evidence])
 
   const filteredEvidence = useMemo(() => {
+    if (!result) return []
     if (activeTab === 'all') {
       return [
         ...result.evidence.supporting,
@@ -53,7 +56,10 @@ export default function ResultPage() {
     }
 
     return result.evidence[activeTab] || []
-  }, [activeTab, result.evidence])
+  }, [activeTab, result])
+
+  if (loading) return <><Navbar /><main className="page-shell py-10"><LoadingState title="Loading investigation" description="Assembling the claim and its evidence..." /></main><Footer /></>
+  if (error || !result) return <><Navbar /><main className="page-shell py-10"><ErrorState title="Investigation unavailable" message={error || 'No result was returned.'} onRetry={() => setReload((current) => current + 1)} /></main><Footer /></>
 
   return (
     <div className="min-h-screen bg-slate-50">

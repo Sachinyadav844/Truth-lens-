@@ -1,4 +1,5 @@
 const VALID_RISK_LEVELS = new Set(['low', 'medium', 'high'])
+const VALID_VERDICTS = new Set(['supported', 'contradicted', 'unclear', 'insufficient_evidence'])
 const UNKNOWN_RISK = 'unknown'
 
 function toSafeText(value, fallback = 'Unavailable') {
@@ -52,6 +53,11 @@ function normalizeConfidence(value, fallback = 0) {
 function normalizeRisk(value, fallback = UNKNOWN_RISK) {
   const normalized = String(value ?? fallback).trim().toLowerCase()
   return VALID_RISK_LEVELS.has(normalized) ? normalized : fallback
+}
+
+function normalizeVerdict(value, fallback = 'insufficient_evidence') {
+  const normalized = String(value ?? fallback).trim().toLowerCase()
+  return VALID_VERDICTS.has(normalized) ? normalized : fallback
 }
 
 function normalizeRelationship(value, fallback = 'unclear') {
@@ -142,6 +148,14 @@ function normalizeSuggestedVerification(value) {
 }
 
 function normalizeClaim(value) {
+  if (typeof value === 'string') {
+    return {
+      original: toSafeText(value, 'Claim unavailable'),
+      normalized: toSafeText(value, 'Claim unavailable'),
+      subClaims: [],
+    }
+  }
+
   if (!value || typeof value !== 'object') {
     return {
       original: '',
@@ -170,8 +184,11 @@ export function normalizeResult(raw) {
       },
       assessment: {
         riskLevel: UNKNOWN_RISK,
+        verdict: 'insufficient_evidence',
         confidence: 0,
         summary: 'An evidence summary could not be generated from the available information.',
+        reasoning: '',
+        limitations: [],
       },
       evidence: {
         supporting: [],
@@ -187,12 +204,17 @@ export function normalizeResult(raw) {
   const confidence = normalizeConfidence(assessment.confidence ?? raw.confidence ?? 0, 0)
 
   return {
-    checkId: raw.checkId || raw.id || '',
-    claim: normalizeClaim(raw.claim ?? raw),
+    checkId: typeof raw.checkId === 'object' ? raw.checkId?._id || raw.checkId?.id || '' : raw.checkId || raw.id || '',
+    claim: normalizeClaim(typeof raw.claim === 'string' ? { original: raw.claim, normalized: raw.claim, subClaims: raw.subClaims } : raw.claim ?? raw),
     assessment: {
+      verdict: normalizeVerdict(assessment.verdict ?? raw.verdict),
       riskLevel: normalizeRisk(assessment.riskLevel ?? raw.riskLevel, UNKNOWN_RISK),
       confidence,
       summary: toSafeText(assessment.summary ?? raw.summary ?? 'An evidence summary could not be generated from the available information.', 'An evidence summary could not be generated from the available information.'),
+      reasoning: toSafeText(assessment.reasoning ?? raw.reasoning, ''),
+      limitations: Array.isArray(assessment.limitations ?? raw.limitations)
+        ? (assessment.limitations ?? raw.limitations).filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
+        : [],
     },
     evidence: normalizeEvidence(raw.evidence ?? {}),
     sources: normalizeSources(raw.sources ?? []),

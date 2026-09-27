@@ -15,13 +15,16 @@ export default function HistoryPage() {
   const [query, setQuery] = useState('')
   const [riskFilter, setRiskFilter] = useState('all')
   const [checks, setChecks] = useState([])
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
+    setError('')
     getHistory()
       .then((history) => setChecks(mapHistoryResponse(history)))
       .catch((requestError) => setError(requestError.message || 'Unable to load your investigations.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [reload])
 
   const filteredChecks = useMemo(() => {
     return checks.filter((item) => {
@@ -45,7 +48,7 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       <main className="page-shell py-10">
-        <ErrorState title="Unable to load your history" message={error} />
+        <ErrorState title="Unable to load your history" message={error} onRetry={() => setReload((current) => current + 1)} />
       </main>
       <Footer />
     </div>

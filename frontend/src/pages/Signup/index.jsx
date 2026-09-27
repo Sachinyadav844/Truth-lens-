@@ -1,6 +1,6 @@
 import { Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import { useAuth } from '../../context/AuthContext'
@@ -9,6 +9,7 @@ const passwordChecks = ['8+ characters', 'Uppercase', 'Number']
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { signup } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [showPassword, setShowPassword] = useState(false)
@@ -56,7 +57,7 @@ export default function SignupPage() {
     setLoading(true)
     try {
       await signup({ name: form.name, email: form.email, password: form.password })
-      navigate('/dashboard', { replace: true })
+      navigate(location.state?.from || '/dashboard', { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'Unable to create your account.')
     } finally {
@@ -138,7 +139,7 @@ export default function SignupPage() {
             </form>
 
             <p className="mt-6 text-center text-sm text-slate-600">
-              Already have an account? <Link to="/login" className="font-semibold text-blue-700 hover:underline">Sign in</Link>
+              Already have an account? <Link to="/login" state={location.state} className="font-semibold text-blue-700 hover:underline">Sign in</Link>
             </p>
           </div>
         </div>
