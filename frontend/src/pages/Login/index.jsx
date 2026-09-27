@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import { useAuth } from '../../context/AuthContext'
-import { authLogin } from '../../services/api'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -35,9 +34,8 @@ export default function LoginPage() {
 
     setLoading(true)
     try {
-      const response = await authLogin(form)
-      login(response.user, response.token)
-      navigate('/dashboard')
+      await login(form)
+      navigate('/dashboard', { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'Unable to sign in.')
     } finally {
@@ -54,6 +52,7 @@ export default function LoginPage() {
             <div className="mb-6 text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600">Welcome back</p>
               <h1 className="mt-3 text-4xl font-black tracking-[-0.07em] text-slate-900">Sign in</h1>
+              <p className="mt-3 text-sm text-slate-600">Sign in to continue your investigations.</p>
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
@@ -68,6 +67,8 @@ export default function LoginPage() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
+                    autoComplete="email"
+                    aria-invalid={Boolean(error)}
                   />
                 </div>
               </label>
@@ -83,6 +84,8 @@ export default function LoginPage() {
                     value={form.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
+                    autoComplete="current-password"
+                    aria-invalid={Boolean(error)}
                   />
                   <button
                     type="button"
@@ -95,18 +98,10 @@ export default function LoginPage() {
                 </div>
               </label>
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="inline-flex items-center gap-2 text-slate-600">
-                  <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-200" />
-                  Remember me
-                </label>
-                <span className="text-slate-400" title="Password recovery will be available when account services are connected">Password recovery unavailable</span>
-              </div>
-
               {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
               <button type="submit" disabled={loading} className="btn-primary w-full disabled:cursor-not-allowed disabled:bg-slate-300">
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
 

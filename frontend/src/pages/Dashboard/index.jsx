@@ -1,14 +1,14 @@
 import { ArrowRight, BarChart3, History, Search, ShieldCheck, Sparkles } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import HistoryCard from '../../components/HistoryCard'
-import { dashboardStats, mockHistory, mockUser } from '../../utils/mockData'
 import { useAuth } from '../../context/AuthContext'
 import { getHistory } from '../../services/api'
 import LoadingState from '../../components/LoadingState'
 import ErrorState from '../../components/ErrorState'
+import { mapHistoryResponse } from '../../utils/mappers'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -17,11 +17,32 @@ export default function DashboardPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    getHistory().then(setChecks).catch((requestError) => setError(requestError.message || 'Unable to load recent investigations.')).finally(() => setLoading(false))
+    getHistory()
+      .then((history) => setChecks(mapHistoryResponse(history)))
+      .catch((requestError) => setError(requestError.message || 'Unable to load recent investigations.'))
+      .finally(() => setLoading(false))
   }, [])
 
-  const recentChecks = checks.length ? checks : mockHistory
-  const displayName = user?.name || mockUser.name
+  const recentChecks = useMemo(() => checks.slice(0, 3), [checks])
+  const displayName = user?.name || 'there'
+
+  const stats = useMemo(() => {
+    const total = checks.length
+    const high = checks.filter((item) => item.risk === 'high').length
+    const medium = checks.filter((item) => item.risk === 'medium').length
+    const low = checks.filter((item) => item.risk === 'low').length
+
+    return [
+      { label: 'Total checks', value: total, delta: total ? 'Live data' : 'No investigations yet' },
+      { label: 'High risk', value: high, delta: 'High' },
+      { label: 'Medium risk', value: medium, delta: 'Medium' },
+      { label: 'Low risk', value: low, delta: 'Low' },
+    ]
+  }, [checks])
+
+  const coveragePercent = checks.length
+    ? Math.min(100, Math.round((checks.reduce((total, item) => total + Number(item.evidenceCount || 0), 0) / Math.max(checks.length, 1)) * 10))
+    : 0
 
   if (loading) return <><Navbar /><main className="page-shell py-10"><LoadingState title="Loading dashboard" description="Preparing your recent investigations..." /></main><Footer /></>
   if (error) return <><Navbar /><main className="page-shell py-10"><ErrorState title="Dashboard unavailable" message={error} /></main><Footer /></>
@@ -42,8 +63,8 @@ export default function DashboardPage() {
           </Link>
         </section>
 
-        <section className="grid gap-5 md:grid-cols-3">
-          {dashboardStats.map((stat) => (
+        <section className="grid gap-5 md:grid-cols-4">
+          {stats.map((stat) => (
             <div key={stat.label} className="stat-card">
               <p className="text-sm text-slate-500">{stat.label}</p>
               <div className="mt-4 flex items-end justify-between">
@@ -61,9 +82,11 @@ export default function DashboardPage() {
               <Link to="/history" className="text-sm font-semibold text-blue-700">View all</Link>
             </div>
             <div className="space-y-4">
-              {recentChecks.slice(0, 3).map((item) => (
-                <HistoryCard key={item.id} item={item} />
-              ))}
+              {recentChecks.length > 0 ? (
+                recentChecks.map((item) => <HistoryCard key={item.id} item={item} />)
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500">No recent investigations.</div>
+              )}
             </div>
           </div>
 
@@ -79,10 +102,12 @@ export default function DashboardPage() {
                   <span className="inline-flex items-center gap-2"><History className="h-4 w-4" /> View cases</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link to="/result/check-1" className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
-                  <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Latest result</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                {recentChecks[0] && (
+                  <Link to={`/result/${recentChecks[0].id}`} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                    <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Latest result</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -101,10 +126,10 @@ export default function DashboardPage() {
                 <div className="flex-1">
                   <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
                     <span>Cross-source coverage</span>
-                    <span>82%</span>
+                    <span>{coveragePercent}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-200">
-                    <div className="h-2 w-[82%] rounded-full bg-blue-600" />
+                    <div className="h-2 rounded-full bg-blue-600" style={{ width: `${coveragePercent}%` }} />
                   </div>
                 </div>
               </div>

@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import { useAuth } from '../../context/AuthContext'
-import { authSignup } from '../../services/api'
 
 const passwordChecks = ['8+ characters', 'Uppercase', 'Number']
 
@@ -56,9 +55,8 @@ export default function SignupPage() {
 
     setLoading(true)
     try {
-      const response = await authSignup({ name: form.name, email: form.email, password: form.password })
-      signup(response.user, response.token)
-      navigate('/dashboard')
+      await signup({ name: form.name, email: form.email, password: form.password })
+      navigate('/dashboard', { replace: true })
     } catch (submitError) {
       setError(submitError.message || 'Unable to create your account.')
     } finally {
@@ -79,10 +77,10 @@ export default function SignupPage() {
 
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Full name</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">Name</span>
                 <div className="relative">
                   <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input className="form-field pl-10" type="text" name="name" value={form.name} onChange={handleChange} placeholder="Your name" />
+                  <input className="form-field pl-10" type="text" name="name" value={form.name} onChange={handleChange} placeholder="Your name" autoComplete="name" aria-invalid={Boolean(error)} />
                 </div>
               </label>
 
@@ -90,7 +88,7 @@ export default function SignupPage() {
                 <span className="mb-2 block text-sm font-medium text-slate-700">Email</span>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input className="form-field pl-10" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com" />
+                  <input className="form-field pl-10" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@example.com" autoComplete="email" aria-invalid={Boolean(error)} />
                 </div>
               </label>
 
@@ -105,8 +103,10 @@ export default function SignupPage() {
                     value={form.password}
                     onChange={handleChange}
                     placeholder="Create a password"
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(error)}
                   />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" onClick={() => setShowPassword((value) => !value)}>
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -123,17 +123,17 @@ export default function SignupPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Confirm password</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">Confirm Password</span>
                 <div className="relative">
                   <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input className="form-field pl-10" type={showPassword ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat your password" />
+                  <input className="form-field pl-10" type={showPassword ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat your password" autoComplete="new-password" aria-invalid={Boolean(error)} />
                 </div>
               </label>
 
               {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
               <button type="submit" disabled={loading} className="btn-primary w-full disabled:cursor-not-allowed disabled:bg-slate-300">
-                {loading ? 'Creating account...' : 'Create account'}
+                {loading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>
 

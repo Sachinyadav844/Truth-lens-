@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { authLogin, authSignup } from '../services/api'
+import { clearSession, getSession, setSession } from '../utils/authStorage'
 
-const STORAGE_KEY = 'truthlens-auth'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -9,37 +10,46 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
-
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw)
-        setUser(parsed.user ?? null)
-        setToken(parsed.token ?? null)
-      } catch (error) {
-        localStorage.removeItem(STORAGE_KEY)
-      }
-    }
-
+    const session = getSession()
+    setUser(session.user)
+    setToken(session.token)
     setLoading(false)
   }, [])
 
-  const login = (nextUser, nextToken = 'mock-token') => {
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null)
+      setToken(null)
+      clearSession()
+    }
+
+    window.addEventListener('auth:session-expired', handleSessionExpired)
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
+  }, [])
+
+  const persistSession = (nextUser, nextToken) => {
     setUser(nextUser)
     setToken(nextToken)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: nextUser, token: nextToken }))
+    setSession({ user: nextUser, token: nextToken })
   }
 
-  const signup = (nextUser, nextToken = 'mock-token') => {
-    setUser(nextUser)
-    setToken(nextToken)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: nextUser, token: nextToken }))
+  const login = async (credentials) => {
+    const response = await authLogin(credentials)
+    persistSession(response.user, response.token)
+    return response
+  }
+
+  const signup = async (credentials) => {
+    const response = await authSignup(credentials)
+    persistSession(response.user, response.token)
+    return response
   }
 
   const logout = () => {
     setUser(null)
     setToken(null)
-    localStorage.removeItem(STORAGE_KEY)
+    clearSession()
+    window.dispatchEvent(new CustomEvent('auth:logged-out'))
   }
 
   const value = useMemo(
@@ -59,5 +69,11 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  const context = useContext(AuthContext)
+
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider.')
+  }
+
+  return context
 }

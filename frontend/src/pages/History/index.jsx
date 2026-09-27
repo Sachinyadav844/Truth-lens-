@@ -6,8 +6,8 @@ import HistoryCard from '../../components/HistoryCard'
 import LoadingState from '../../components/LoadingState'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
-import { mockHistory } from '../../utils/mockData'
 import { getHistory } from '../../services/api'
+import { mapHistoryResponse } from '../../utils/mappers'
 
 export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
@@ -17,13 +17,15 @@ export default function HistoryPage() {
   const [checks, setChecks] = useState([])
 
   useEffect(() => {
-    getHistory().then(setChecks).catch((requestError) => setError(requestError.message || 'Unable to load your investigations.')).finally(() => setLoading(false))
+    getHistory()
+      .then((history) => setChecks(mapHistoryResponse(history)))
+      .catch((requestError) => setError(requestError.message || 'Unable to load your investigations.'))
+      .finally(() => setLoading(false))
   }, [])
 
   const filteredChecks = useMemo(() => {
-    const history = checks.length ? checks : mockHistory
-    return history.filter((item) => {
-      const matchesQuery = item.claim.toLowerCase().includes(query.toLowerCase())
+    return checks.filter((item) => {
+      const matchesQuery = String(item.claim || '').toLowerCase().includes(query.toLowerCase())
       const matchesRisk = riskFilter === 'all' || item.risk === riskFilter
       return matchesQuery && matchesRisk
     })
@@ -81,9 +83,9 @@ export default function HistoryPage() {
               aria-label="Filter checks by risk"
             >
               <option value="all">All risk</option>
-              <option value="supported">Supported</option>
-              <option value="mixed">Mixed evidence</option>
-              <option value="contradicted">Contradicted</option>
+              <option value="low">Low risk</option>
+              <option value="medium">Medium risk</option>
+              <option value="high">High risk</option>
             </select>
           </div>
         </div>
@@ -94,9 +96,9 @@ export default function HistoryPage() {
           </div>
         ) : (
           <EmptyState
-            title="No matching claim checks"
-            message="Try another search term or switch the risk filter."
-            actionLabel="Check your first claim"
+            title={checks.length > 0 ? 'No matching claim checks' : 'No investigations yet.'}
+            message={checks.length > 0 ? 'Try another search term or switch the risk filter.' : 'Check your first claim to start building a record of evidence.'}
+            actionLabel={checks.length > 0 ? 'Check your first claim' : 'Check your first claim'}
             actionTo="/check"
           />
         )}

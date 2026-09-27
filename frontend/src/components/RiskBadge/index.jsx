@@ -22,7 +22,7 @@ export default function RiskBadge({ level = 'low', className = '' }) {
   const label = labels[key] || labels.low
 
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone} ${className}`}>
+    <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone} ${className}`} aria-label={`Risk level: ${label}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
       {label}
     </span>

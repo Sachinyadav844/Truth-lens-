@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LandingPage from './pages/Landing'
 import LoginPage from './pages/Login'
@@ -12,21 +12,39 @@ import NotFoundPage from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function AppRoutes() {
-  const { loading } = useAuth()
+  const { loading, isAuthenticated } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const titles = {
-      '/': 'TruthLens | Investigate Claims',
-      '/login': 'TruthLens | Sign In',
-      '/signup': 'TruthLens | Create Account',
-      '/dashboard': 'TruthLens | Dashboard',
-      '/check': 'TruthLens | Check a Claim',
-      '/history': 'TruthLens | History',
+      '/': 'TruthLens | Evidence Before Conclusions',
+      '/login': 'Sign In | TruthLens',
+      '/signup': 'Create Account | TruthLens',
+      '/dashboard': 'Dashboard | TruthLens',
+      '/check': 'Check a Claim | TruthLens',
+      '/history': 'Investigation History | TruthLens',
     }
 
-    document.title = titles[location.pathname] || 'TruthLens'
+    const match = location.pathname.match(/^\/result\/(.+)$/)
+    document.title = match ? 'Investigation Result | TruthLens' : titles[location.pathname] || 'TruthLens'
   }, [location.pathname])
+
+  useEffect(() => {
+    const handleAuthRedirect = () => {
+      if (!isAuthenticated) {
+        navigate('/login', { replace: true })
+      }
+    }
+
+    window.addEventListener('auth:logged-out', handleAuthRedirect)
+    window.addEventListener('auth:session-expired', handleAuthRedirect)
+
+    return () => {
+      window.removeEventListener('auth:logged-out', handleAuthRedirect)
+      window.removeEventListener('auth:session-expired', handleAuthRedirect)
+    }
+  }, [isAuthenticated, navigate])
 
   if (loading) {
     return (

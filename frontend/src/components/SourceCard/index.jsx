@@ -5,11 +5,23 @@ const iconMap = {
   news: Newspaper,
   government: BookOpenText,
   analysis: BookOpenText,
+  wikipedia: BookOpenText,
   default: BookOpenText,
+}
+
+function isSafeUrl(value) {
+  if (!value || typeof value !== 'string') return false
+  try {
+    const parsed = new URL(value)
+    return ['http:', 'https:'].includes(parsed.protocol)
+  } catch (error) {
+    return false
+  }
 }
 
 export default function SourceCard({ source }) {
   const Icon = iconMap[source?.type] || iconMap.default
+  const safeUrl = isSafeUrl(source?.url) ? source.url : ''
 
   return (
     <article className="truth-card p-5">
@@ -31,14 +43,18 @@ export default function SourceCard({ source }) {
       <div className="space-y-3 text-sm text-slate-600">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-slate-400" />
-          {source?.publishedAt ? formatDate(source.publishedAt) : 'Date unavailable'}
+          {source?.publishedAt ? formatDate(source.publishedAt) : 'Publication date unavailable'}
         </div>
         <p>{source?.content || 'No source excerpt is currently available.'}</p>
       </div>
 
-      <a href={source?.url || '#'} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex max-w-full items-center gap-2 break-all text-sm font-semibold text-blue-700 hover:underline">
-        Open source <ArrowUpRight className="h-4 w-4" />
-      </a>
+      {safeUrl ? (
+        <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex max-w-full items-center gap-2 break-all text-sm font-semibold text-blue-700 hover:underline">
+          View Source <ArrowUpRight className="h-4 w-4" />
+        </a>
+      ) : (
+        <p className="mt-5 text-sm text-slate-500">Source link unavailable</p>
+      )}
     </article>
   )
 }

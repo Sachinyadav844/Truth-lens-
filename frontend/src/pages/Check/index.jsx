@@ -37,19 +37,37 @@ export default function CheckPage() {
     }
   }, [loading])
 
+  const validateClaim = (value) => {
+    const trimmed = value.trim()
+
+    if (!trimmed) return 'Enter a specific factual claim to investigate.'
+    if (trimmed.length < 8) return 'Enter a specific factual claim to investigate.'
+    if (trimmed.length > 2000) return 'Claim is too long. Keep the statement concise and factual.'
+    return ''
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!claim.trim() || claim.trim().length > 500) return
+    const validationMessage = validateClaim(claim)
+
+    if (validationMessage) {
+      setError(validationMessage)
+      return
+    }
+
     setError('')
     setProgressIndex(0)
     setLoading(true)
+
     const result = await run(claim.trim())
+
     if (result?.checkId) {
       navigate(`/result/${result.checkId}`)
-    } else {
-      setError('We could not complete this investigation. Please try again.')
-      setLoading(false)
+      return
     }
+
+    setError('We could not complete this investigation. Please try again.')
+    setLoading(false)
   }
 
   return (
@@ -75,10 +93,11 @@ export default function CheckPage() {
                     placeholder="Paste a claim, headline, statistic, or statement to investigate..."
                     examples={exampleClaims}
                     buttonLabel="Analyze Claim"
+                    loading={false}
                   />
                 </div>
                 <div className="flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-                  <p className={claim.length > 500 ? 'text-rose-600' : ''}>{claim.length}/500 characters</p>
+                  <p className={claim.trim().length > 2000 ? 'text-rose-600' : ''}>{claim.length}/2000 characters</p>
                   <button
                     type="button"
                     onClick={() => setClaim('')}
