@@ -1,3 +1,5 @@
+import { normalizeResult } from './normalizeResult'
+
 const VALID_RISK_LEVELS = new Set(['low', 'medium', 'high'])
 
 export function normalizeConfidence(value, fallback = 0) {
@@ -60,48 +62,15 @@ export function mapEvidenceEntry(entry, category = 'supporting') {
 }
 
 export function mapCheckResponse(data) {
-  if (!data || typeof data !== 'object') {
-    return {
-      checkId: '',
-      claim: { original: '', normalized: '', subClaims: [] },
-      assessment: { riskLevel: 'medium', confidence: 0, summary: 'No assessment available.' },
-      evidence: { supporting: [], contradicting: [], unclear: [] },
-      sources: [],
-      suggestedVerification: [],
-    }
-  }
-
-  const evidence = {
-    supporting: Array.isArray(data.evidence?.supporting) ? data.evidence.supporting.map((entry) => mapEvidenceEntry(entry, 'supporting')) : [],
-    contradicting: Array.isArray(data.evidence?.contradicting) ? data.evidence.contradicting.map((entry) => mapEvidenceEntry(entry, 'contradicting')) : [],
-    unclear: Array.isArray(data.evidence?.unclear) ? data.evidence.unclear.map((entry) => mapEvidenceEntry(entry, 'unclear')) : [],
-  }
-
-  const sources = Array.isArray(data.sources) ? data.sources.map((source) => ({
-    sourceId: source?.sourceId || source?.id || `source-${Math.random().toString(16).slice(2, 8)}`,
-    type: source?.type || 'source',
-    title: source?.title || source?.sourceTitle || 'Source title unavailable',
-    url: toSafeUrl(source?.url || source?.sourceUrl),
-    publishedAt: source?.publishedAt || null,
-    publisher: source?.publisher || source?.sourcePublisher || 'Publisher unavailable',
-    content: source?.content || source?.excerpt || 'No source excerpt available.',
-  })) : []
+  const normalized = normalizeResult(data)
 
   return {
-    checkId: data.checkId || data.id || '',
-    claim: {
-      original: data.claim?.original || data.claim || '',
-      normalized: data.claim?.normalized || data.claim || '',
-      subClaims: Array.isArray(data.claim?.subClaims) ? data.claim.subClaims : [],
-    },
-    assessment: {
-      riskLevel: normalizeRisk(data.assessment?.riskLevel || data.riskLevel, 'medium'),
-      confidence: normalizeConfidence(data.assessment?.confidence ?? data.confidence, 0),
-      summary: data.assessment?.summary || 'No summary available.',
-    },
-    evidence,
-    sources,
-    suggestedVerification: Array.isArray(data.suggestedVerification) ? data.suggestedVerification.filter(Boolean) : [],
+    checkId: normalized.checkId,
+    claim: normalized.claim,
+    assessment: normalized.assessment,
+    evidence: normalized.evidence,
+    sources: normalized.sources,
+    suggestedVerification: normalized.suggestedVerification,
   }
 }
 

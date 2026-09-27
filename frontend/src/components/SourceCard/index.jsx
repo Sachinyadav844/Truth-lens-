@@ -3,9 +3,10 @@ import { formatDate } from '../../utils/formatDate'
 
 const iconMap = {
   news: Newspaper,
+  wikipedia: BookOpenText,
   government: BookOpenText,
   analysis: BookOpenText,
-  wikipedia: BookOpenText,
+  reference: BookOpenText,
   default: BookOpenText,
 }
 
@@ -20,7 +21,7 @@ function isSafeUrl(value) {
 }
 
 export default function SourceCard({ source }) {
-  const Icon = iconMap[source?.type] || iconMap.default
+  const Icon = iconMap[String(source?.type || 'default').toLowerCase()] || iconMap.default
   const safeUrl = isSafeUrl(source?.url) ? source.url : ''
 
   return (

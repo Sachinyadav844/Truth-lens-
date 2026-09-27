@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LandingPage from './pages/Landing'
@@ -10,6 +10,38 @@ import ResultPage from './pages/Result'
 import HistoryPage from './pages/History'
 import NotFoundPage from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error) {
+    console.error('TruthLens UI error:', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+          <div className="truth-card max-w-md p-8 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-blue-600">TruthLens</p>
+            <h1 className="mt-4 text-3xl font-black tracking-[-0.07em] text-slate-900">Something went wrong.</h1>
+            <p className="mt-3 text-sm text-slate-600">The app hit an unexpected rendering issue. Please return home and try again.</p>
+            <a href="/" className="btn-primary mt-6 w-full">Return Home</a>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 function AppRoutes() {
   const { loading, isAuthenticated } = useAuth()
@@ -29,6 +61,20 @@ function AppRoutes() {
     const match = location.pathname.match(/^\/result\/(.+)$/)
     document.title = match ? 'Investigation Result | TruthLens' : titles[location.pathname] || 'TruthLens'
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!location.hash) return undefined
+
+    const elementId = location.hash.slice(1)
+    const timer = window.setTimeout(() => {
+      const element = document.getElementById(elementId)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 80)
+
+    return () => window.clearTimeout(timer)
+  }, [location.hash, location.pathname])
 
   useEffect(() => {
     const handleAuthRedirect = () => {
@@ -101,11 +147,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 
