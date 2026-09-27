@@ -1,42 +1,143 @@
-# Truth-lens
+# TruthLens
+> **Evidence-First AI Fact-Checking and Claim Investigation Platform**
 
-Truth-lens is a full-stack claim verification workspace. The repository contains a React/Vite frontend and an Express backend, with service boundaries ready for evidence gathering and AI-assisted analysis.
+---
 
-## Structure
+## 🏆 Hackathon Details
+* **Hackathon Portal:** [Azisly Hackathon](https://hackathon.azisly.ai)
+* **Hackathon ID:** AZIS-2A4NRJ
+* **Team Name:** Shivam's Team
+* **College:** NITRA Technical Campus
+* **Team Members:**
+  * Shivam Maurya (shivammaurya13681@gmail.com)
+  * Sachin Yadav
+  * Karan
 
-- `frontend/` - React user interface
-- `backend/` - Express API
-- `backend/prompts/` - reusable analysis prompts
-- `docs/` - architecture, API, decisions, and demo notes
+---
 
-## Setup
+TruthLens is a misinformation-triage platform designed to help users investigate factual claims using retrieved external evidence rather than relying solely on AI model knowledge. By separating **evidence retrieval** from **AI reasoning**, TruthLens provides a transparent, auditable, and uncertainty-aware fact-checking experience.
 
-```bash
-npm run install:all
-npm run dev
+## 📌 Overview
+
+The modern information ecosystem is flooded with misleading, incomplete, and contradictory claims. A conventional AI chatbot can generate confident answers even when reliable evidence is unavailable, leading to hallucinations. 
+
+TruthLens solves this by forcing the AI to reason *only* over retrieved, validated evidence from multiple sources. If the evidence is insufficient or contradictory, TruthLens communicates uncertainty instead of forcing a binary "True" or "False" conclusion.
+
+## 🧠 Core Philosophy
+
+1. **Evidence First:** The AI reasons over retrieved evidence, not its internal training data.
+2. **Source Transparency:** Users see exactly which sources support, contradict, or leave a claim unclear.
+3. **Uncertainty Awareness:** If external sources lack information, the system returns an `insufficient_evidence` verdict rather than fabricating proof.
+4. **Non-Fabrication Architecture:** If the system did not retrieve the evidence, the AI cannot present it as a citation or URL.
+
+## ⚙️ How It Works: The Investigation Pipeline
+
+TruthLens converts a user claim into a structured investigation through a multi-stage pipeline:
+
+```text
+User Claim Submitted
+       │
+       ▼
+Search Orchestrator
+       │
+ ┌─────┼─────┐
+ │     │     │
+ ▼     ▼     ▼
+News  PIB   OpenAlex  (Parallel fetching with partial-failure handling)
+ │     │     │
+ └─────┼─────┘
+       │
+       ▼
+Evidence Normalization (Standardizing metadata, titles, URLs)
+       │
+       ▼
+Deduplication & Relevance Filtering (Removing duplicates & low-relevance matches)
+       │
+       ▼
+Gemini AI Synthesis (Classifying evidence & generating structured analysis)
+       │
+       ▼
+Strict Output Validation (Ensuring valid JSON, real citations, and logical verdicts)
+       │
+       ▼
+MongoDB Persistence & Frontend Rendering
 ```
 
-The frontend runs on port 5173 and the API runs on port 4000 by default.
+## ✨ Features
 
-## Environment
+* **Multi-Source Evidence Retrieval:** 
+  * **News:** Recent reporting via NewsAPI.
+  * **Government:** Official announcements and schemes via PIB RSS.
+  * **Research:** Academic and scientific evidence via OpenAlex.
+* **Partial-Failure Handling:** If one provider goes down, the investigation continues with available data.
+* **Evidence Classification:** Categorizes retrieved data into *Supporting*, *Contradicting*, or *Unclear*.
+* **Strict AI Output Guardrails:** Validates risk levels, confidence scores, and prevents hallucinated URLs.
+* **Interactive Investigation UI:** Real-time visual progress from claim submission to final evidence cards.
+* **Investigation History:** Authenticated users can save and revisit previous fact-checks.
 
-Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env`.
+## 🛠 Tech Stack
 
-Backend variables:
+| Layer               | Technology                          |
+| ------------------- | ----------------------------------- |
+| **Frontend**        | React, Vite, Tailwind CSS, Framer Motion, React Router |
+| **Backend**         | Node.js, Express                    |
+| **Database**        | MongoDB, Mongoose                   |
+| **Authentication**  | JWT (JSON Web Tokens)               |
+| **Evidence Sources**| NewsAPI, PIB RSS, OpenAlex          |
+| **AI Synthesis**    | Google Gemini API                   |
 
-- Required: `MONGO_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, and `OPENALEX_API_KEY`.
-- Optional NewsAPI provider: `NEWS_API_KEY`.
-- Optional data.gov.in government fallback: `DATA_GOV_API_URL` and `DATA_GOV_API_KEY`. The PIB RSS feed is attempted first.
-- Optional settings: `PORT` (defaults to 4000), `CLIENT_ORIGIN`, `GEMINI_MODEL`, and `GEMINI_TIMEOUT_MS`.
+## 🔐 Environment Variables (.env Setup)
 
-The Gemini API key is sent in the `x-goog-api-key` request header. If Gemini is not configured or fails, the API returns retrieved sources with an unknown assessment and no generated evidence.
+To run TruthLens locally, create a `.env` file in the root of your backend directory and populate it with the following keys. **Never commit this file to version control.**
 
-## API Contract
+```env
+# Server Configuration
+PORT=5000
+NODE_ENV=development
 
-- `GET /api/health` returns the service and database status; it returns HTTP 503 while MongoDB is unavailable.
-- `POST /api/auth/signup` accepts `{ "email": "...", "password": "..." }` and returns `{ "token", "user": { "id", "email" } }`.
-- `POST /api/auth/login` accepts the same body and returns the same token/user shape.
-- `POST /api/check` requires a Bearer token, accepts `{ "content": "..." }` (or `{ "claim": "..." }`), and returns `{ "checkId", "claim", "subClaims", "status", "assessment", "evidence", "sources" }`.
-- `GET /api/check/:id` and `GET /api/check/history` require a Bearer token. History returns `{ "checks": [...] }`.
+# Database
+MONGO_URI=your_mongodb_connection_string_here
 
-There is no `/api/signup`, `/api/login`, or `/api/history` route in the current backend; use the `/api/auth/*` and `/api/check/history` paths above.
+# Authentication
+JWT_SECRET=your_super_secret_jwt_key_here
+
+# External APIs for Evidence Retrieval
+NEWS_API_KEY=your_news_api_key_here
+OPENALEX_API_KEY=your_openalex_api_key_here  # Optional depending on OpenAlex tier
+
+# AI Synthesis
+GEMINI_API_KEY=your_google_gemini_api_key_here
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+* Node.js (v18+)
+* MongoDB instance (local or Atlas)
+* API keys for Gemini and NewsAPI
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/truthlens.git
+   cd truthlens
+   ```
+
+2. **Backend Setup:**
+   ```bash
+   cd backend
+   npm install
+   # Create your .env file here based on the template above
+   npm run dev
+   ```
+
+3. **Frontend Setup:**
+   ```bash
+   cd ../frontend
+   npm install
+   npm run dev
+   ```
+
+4. **Access the platform:**
+   Open `http://localhost:5173` in your browser.
